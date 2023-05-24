@@ -59,7 +59,7 @@ from homeassistant.helpers import (
     entity_registry as er,
     intent,
     issue_registry as ir,
-    label_registry,
+    label_registry as lr,
     recorder as recorder_helper,
     restore_state,
     storage,
@@ -258,7 +258,7 @@ async def async_test_home_assistant(event_loop, load_registries=True):
                 dr.async_load(hass),
                 er.async_load(hass),
                 ir.async_load(hass),
-                label_registry.async_load(hass),
+                lr.async_load(hass),
             )
         hass.data[bootstrap.DATA_REGISTRIES_LOADED] = None
 

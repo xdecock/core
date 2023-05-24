@@ -80,7 +80,7 @@ class DeviceEntry:
     hw_version: str | None = attr.ib(default=None)
     id: str = attr.ib(factory=uuid_util.random_uuid_hex)
     identifiers: set[tuple[str, str]] = attr.ib(converter=set, factory=set)
-    labels: set[str] = attr.ib(factory=set)
+    labels: set[str] = attr.ib(converter=set, factory=set)
     manufacturer: str | None = attr.ib(default=None)
     model: str | None = attr.ib(default=None)
     name_by_user: str | None = attr.ib(default=None)
@@ -223,7 +223,7 @@ class DeviceRegistryStore(storage.Store[dict[str, list[dict[str, Any]]]]):
             if old_minor_version < 4:
                 # Introduced in 2022.10
                 for device in old_data["devices"]:
-                    device["labels"] = device.get("labels", set())
+                    device["labels"] = device.get("labels", [])
 
         if old_major_version > 1:
             raise NotImplementedError

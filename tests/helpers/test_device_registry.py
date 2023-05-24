@@ -505,12 +505,14 @@ async def test_migration_1_2_to_1_4(
 
 
 @pytest.mark.parametrize("load_registries", [False])
-async def test_migration_1_3_to_1_4(hass, hass_storage):
+async def test_migration_1_3_to_1_4(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
     """Test migration from version 1.3 to 1.4."""
-    hass_storage[device_registry.STORAGE_KEY] = {
+    hass_storage[dr.STORAGE_KEY] = {
         "version": 1,
         "minor_version": 3,
-        "key": device_registry.STORAGE_KEY,
+        "key": dr.STORAGE_KEY,
         "data": {
             "devices": [
                 {
@@ -552,8 +554,8 @@ async def test_migration_1_3_to_1_4(hass, hass_storage):
         },
     }
 
-    await device_registry.async_load(hass)
-    registry = device_registry.async_get(hass)
+    await dr.async_load(hass)
+    registry = dr.async_get(hass)
 
     # Test data was loaded
     entry = registry.async_get_or_create(
@@ -575,10 +577,10 @@ async def test_migration_1_3_to_1_4(hass, hass_storage):
     # Check we store migrated data
     await flush_store(registry._store)
 
-    assert hass_storage[device_registry.STORAGE_KEY] == {
-        "version": device_registry.STORAGE_VERSION_MAJOR,
-        "minor_version": device_registry.STORAGE_VERSION_MINOR,
-        "key": device_registry.STORAGE_KEY,
+    assert hass_storage[dr.STORAGE_KEY] == {
+        "version": dr.STORAGE_VERSION_MAJOR,
+        "minor_version": dr.STORAGE_VERSION_MINOR,
+        "key": dr.STORAGE_KEY,
         "data": {
             "devices": [
                 {
@@ -1798,22 +1800,22 @@ async def test_only_disable_device_if_all_config_entries_are_disabled(
     assert not entry1.disabled
 
 
-async def test_removing_labels(registry: device_registry.DeviceRegistry) -> None:
+async def test_removing_labels(device_registry: dr.DeviceRegistry) -> None:
     """Make sure we can clear labels."""
-    entry = registry.async_get_or_create(
+    entry = device_registry.async_get_or_create(
         config_entry_id="123",
-        connections={(device_registry.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:EF")},
+        connections={(dr.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:EF")},
         identifiers={("bridgeid", "0123")},
         manufacturer="manufacturer",
         model="model",
     )
-    entry = registry.async_update_device(entry.id, labels={"label1", "label2"})
+    entry = device_registry.async_update_device(entry.id, labels={"label1", "label2"})
 
-    registry.async_clear_label_id("label1")
-    entry_cleared_label1 = registry.async_get_device({("bridgeid", "0123")})
+    device_registry.async_clear_label_id("label1")
+    entry_cleared_label1 = device_registry.async_get_device({("bridgeid", "0123")})
 
-    registry.async_clear_label_id("label2")
-    entry_cleared_label2 = registry.async_get_device({("bridgeid", "0123")})
+    device_registry.async_clear_label_id("label2")
+    entry_cleared_label2 = device_registry.async_get_device({("bridgeid", "0123")})
 
     assert entry_cleared_label1
     assert entry_cleared_label2
@@ -1825,49 +1827,49 @@ async def test_removing_labels(registry: device_registry.DeviceRegistry) -> None
     assert not entry_cleared_label2.labels
 
 
-async def test_entries_for_label(registry: device_registry.DeviceRegistry) -> None:
+async def test_entries_for_label(device_registry: dr.DeviceRegistry) -> None:
     """Test getting device entries by label."""
-    registry.async_get_or_create(
+    device_registry.async_get_or_create(
         config_entry_id="000",
-        connections={(device_registry.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:00")},
+        connections={(dr.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:00")},
         identifiers={("bridgeid", "0000")},
         manufacturer="manufacturer",
         model="model",
     )
-    entry_1 = registry.async_get_or_create(
+    entry_1 = device_registry.async_get_or_create(
         config_entry_id="123",
-        connections={(device_registry.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:23")},
+        connections={(dr.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:23")},
         identifiers={("bridgeid", "0123")},
         manufacturer="manufacturer",
         model="model",
     )
-    entry_1 = registry.async_update_device(entry_1.id, labels={"label1"})
-    entry_2 = registry.async_get_or_create(
+    entry_1 = device_registry.async_update_device(entry_1.id, labels={"label1"})
+    entry_2 = device_registry.async_get_or_create(
         config_entry_id="456",
-        connections={(device_registry.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:56")},
+        connections={(dr.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:56")},
         identifiers={("bridgeid", "0456")},
         manufacturer="manufacturer",
         model="model",
     )
-    entry_2 = registry.async_update_device(entry_2.id, labels={"label2"})
-    entry_1_and_2 = registry.async_get_or_create(
+    entry_2 = device_registry.async_update_device(entry_2.id, labels={"label2"})
+    entry_1_and_2 = device_registry.async_get_or_create(
         config_entry_id="789",
-        connections={(device_registry.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:89")},
+        connections={(dr.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:89")},
         identifiers={("bridgeid", "0789")},
         manufacturer="manufacturer",
         model="model",
     )
-    entry_1_and_2 = registry.async_update_device(
+    entry_1_and_2 = device_registry.async_update_device(
         entry_1_and_2.id, labels={"label1", "label2"}
     )
 
-    entries = device_registry.async_entries_for_label(registry, "label1")
+    entries = dr.async_entries_for_label(device_registry, "label1")
     assert len(entries) == 2
     assert entries == [entry_1, entry_1_and_2]
 
-    entries = device_registry.async_entries_for_label(registry, "label2")
+    entries = dr.async_entries_for_label(device_registry, "label2")
     assert len(entries) == 2
     assert entries == [entry_2, entry_1_and_2]
 
-    assert not device_registry.async_entries_for_label(registry, "unknown")
-    assert not device_registry.async_entries_for_label(registry, "")
+    assert not dr.async_entries_for_label(device_registry, "unknown")
+    assert not dr.async_entries_for_label(device_registry, "")

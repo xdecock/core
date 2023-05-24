@@ -19,7 +19,7 @@ STORAGE_VERSION_MAJOR = 1
 SAVE_DELAY = 10
 
 
-@dataclass(frozen=True)
+@dataclass(slots=True, frozen=True)
 class LabelEntry:
     """Label Registry Entry."""
 

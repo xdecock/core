@@ -1,8 +1,6 @@
 """Test service helpers."""
 from collections import OrderedDict
 from copy import deepcopy
-import errno
-from os import error
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -223,6 +221,7 @@ def area_mock(hass):
             entity_in_area_b.entity_id: entity_in_area_b,
         },
     )
+
 
 @pytest.fixture
 def label_mock(hass: HomeAssistant) -> None:
@@ -656,6 +655,7 @@ async def test_extract_entity_ids_from_labels(
         )
         == set()
     )
+
 
 async def test_async_get_all_descriptions(hass: HomeAssistant) -> None:
     """Test async_get_all_descriptions."""

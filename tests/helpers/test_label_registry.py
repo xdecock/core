@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
     device_registry as dr,
     entity_registry as er,
-    label_registry,
+    label_registry as lr,
 )
 from homeassistant.helpers.label_registry import (
     EVENT_LABEL_REGISTRY_UPDATED,
@@ -22,19 +22,20 @@ from homeassistant.helpers.label_registry import (
 from tests.common import async_capture_events, flush_store
 
 
-async def test_list_labels(hass: HomeAssistant) -> None:
+async def test_list_labels(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can read label."""
-    registry = label_registry.async_get(hass)
-    labels = registry.async_list_labels()
-
-    assert len(list(labels)) == len(registry.labels)
+    labels = label_registry.async_list_labels()
+    assert len(list(labels)) == len(label_registry.labels)
 
 
-async def test_create_label(hass: HomeAssistant) -> None:
+async def test_create_label(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can create labels."""
     update_events = async_capture_events(hass, EVENT_LABEL_REGISTRY_UPDATED)
-    registry = label_registry.async_get(hass)
-    label = registry.async_create(
+    label = label_registry.async_create(
         name="My Label",
         color="#FF0000",
         icon="mdi:test",
@@ -47,7 +48,7 @@ async def test_create_label(hass: HomeAssistant) -> None:
     assert label.icon == "mdi:test"
     assert label.description == "This label is for testing"
 
-    assert len(registry.labels) == 1
+    assert len(label_registry.labels) == 1
 
     await hass.async_block_till_done()
 
@@ -58,46 +59,49 @@ async def test_create_label(hass: HomeAssistant) -> None:
     }
 
 
-async def test_create_label_with_name_already_in_use(hass: HomeAssistant) -> None:
+async def test_create_label_with_name_already_in_use(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can't create an label with a name already in use."""
     update_events = async_capture_events(hass, EVENT_LABEL_REGISTRY_UPDATED)
-    registry = label_registry.async_get(hass)
-    registry.async_create("mock")
+    label_registry.async_create("mock")
 
     with pytest.raises(
         ValueError, match=re.escape("The name mock (mock) is already in use")
     ):
-        registry.async_create("mock")
+        label_registry.async_create("mock")
 
     await hass.async_block_till_done()
 
-    assert len(registry.labels) == 1
+    assert len(label_registry.labels) == 1
     assert len(update_events) == 1
 
 
-async def test_create_label_with_id_already_in_use(hass: HomeAssistant) -> None:
+async def test_create_label_with_id_already_in_use(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can't create an label with a name already in use."""
-    registry = label_registry.async_get(hass)
-    label = registry.async_create("Label")
+    label = label_registry.async_create("Label")
 
-    updated_label = registry.async_update(label.label_id, name="Renamed Label")
+    updated_label = label_registry.async_update(label.label_id, name="Renamed Label")
     assert updated_label.label_id == label.label_id
 
-    second_label = registry.async_create("Label")
+    second_label = label_registry.async_create("Label")
     assert label.label_id != second_label.label_id
     assert second_label.label_id == "label_2"
 
 
-async def test_delete_label(hass: HomeAssistant) -> None:
+async def test_delete_label(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can delete an label."""
     update_events = async_capture_events(hass, EVENT_LABEL_REGISTRY_UPDATED)
-    registry = label_registry.async_get(hass)
-    label = registry.async_create("Label")
-    assert len(registry.labels) == 1
+    label = label_registry.async_create("Label")
+    assert len(label_registry.labels) == 1
 
-    registry.async_delete(label.label_id)
+    label_registry.async_delete(label.label_id)
 
-    assert not registry.labels
+    assert not label_registry.labels
 
     await hass.async_block_till_done()
 
@@ -112,31 +116,33 @@ async def test_delete_label(hass: HomeAssistant) -> None:
     }
 
 
-async def test_delete_non_existing_label(hass: HomeAssistant) -> None:
+async def test_delete_non_existing_label(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can't delete an label that doesn't exist."""
-    registry = label_registry.async_get(hass)
-    registry.async_create("mock")
+    label_registry.async_create("mock")
 
     with pytest.raises(KeyError):
-        registry.async_delete("")
+        label_registry.async_delete("")
 
-    assert len(registry.labels) == 1
+    assert len(label_registry.labels) == 1
 
 
-async def test_update_label(hass: HomeAssistant) -> None:
+async def test_update_label(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can update labels."""
     update_events = async_capture_events(hass, EVENT_LABEL_REGISTRY_UPDATED)
-    registry = label_registry.async_get(hass)
-    label = registry.async_create("Mock")
+    label = label_registry.async_create("Mock")
 
-    assert len(registry.labels) == 1
+    assert len(label_registry.labels) == 1
     assert label.label_id == "mock"
     assert label.name == "Mock"
     assert label.color is None
     assert label.icon is None
     assert label.description is None
 
-    updated_label = registry.async_update(
+    updated_label = label_registry.async_update(
         label.label_id,
         name="Updated",
         color="#FFFFFF",
@@ -151,7 +157,7 @@ async def test_update_label(hass: HomeAssistant) -> None:
     assert updated_label.icon == "mdi:update"
     assert updated_label.description == "Updated description"
 
-    assert len(registry.labels) == 1
+    assert len(label_registry.labels) == 1
 
     await hass.async_block_till_done()
 
@@ -166,18 +172,19 @@ async def test_update_label(hass: HomeAssistant) -> None:
     }
 
 
-async def test_update_label_with_same_data(hass: HomeAssistant) -> None:
+async def test_update_label_with_same_data(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can reapply the same data to the label and it won't update."""
     update_events = async_capture_events(hass, EVENT_LABEL_REGISTRY_UPDATED)
-    registry = label_registry.async_get(hass)
-    label = registry.async_create(
+    label = label_registry.async_create(
         "mock",
         color="#FFFFFF",
         icon="mdi:test",
         description="Description",
     )
 
-    udpated_label = registry.async_update(
+    udpated_label = label_registry.async_update(
         label_id=label.label_id,
         name="mock",
         color="#FFFFFF",
@@ -196,77 +203,79 @@ async def test_update_label_with_same_data(hass: HomeAssistant) -> None:
     }
 
 
-async def test_update_label_with_same_name_change_case(hass: HomeAssistant) -> None:
+async def test_update_label_with_same_name_change_case(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can reapply the same name with a different case to the label."""
-    registry = label_registry.async_get(hass)
-    label = registry.async_create("mock")
+    label = label_registry.async_create("mock")
 
-    updated_label = registry.async_update(label.label_id, name="Mock")
+    updated_label = label_registry.async_update(label.label_id, name="Mock")
 
     assert updated_label.name == "Mock"
     assert updated_label.label_id == label.label_id
     assert updated_label.normalized_name == label.normalized_name
-    assert len(registry.labels) == 1
+    assert len(label_registry.labels) == 1
 
 
-async def test_update_label_with_name_already_in_use(hass: HomeAssistant) -> None:
+async def test_update_label_with_name_already_in_use(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can't update an label with a name already in use."""
-    registry = label_registry.async_get(hass)
-    label1 = registry.async_create("mock1")
-    label2 = registry.async_create("mock2")
+    label1 = label_registry.async_create("mock1")
+    label2 = label_registry.async_create("mock2")
 
     with pytest.raises(
         ValueError, match=re.escape("The name mock2 (mock2) is already in use")
     ):
-        registry.async_update(label1.label_id, name="mock2")
+        label_registry.async_update(label1.label_id, name="mock2")
 
     assert label1.name == "mock1"
     assert label2.name == "mock2"
-    assert len(registry.labels) == 2
+    assert len(label_registry.labels) == 2
 
 
 async def test_update_label_with_normalized_name_already_in_use(
-    hass: HomeAssistant,
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
 ) -> None:
     """Make sure that we can't update an label with a normalized name already in use."""
-    registry = label_registry.async_get(hass)
-    label1 = registry.async_create("mock1")
-    label2 = registry.async_create("M O C K 2")
+    label1 = label_registry.async_create("mock1")
+    label2 = label_registry.async_create("M O C K 2")
 
     with pytest.raises(
         ValueError, match=re.escape("The name mock2 (mock2) is already in use")
     ):
-        registry.async_update(label1.label_id, name="mock2")
+        label_registry.async_update(label1.label_id, name="mock2")
 
     assert label1.name == "mock1"
     assert label2.name == "M O C K 2"
-    assert len(registry.labels) == 2
+    assert len(label_registry.labels) == 2
 
 
-async def test_load_labels(hass: HomeAssistant) -> None:
+async def test_load_labels(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure that we can load/save data correctly."""
-    registry = label_registry.async_get(hass)
-    label1 = registry.async_create(
+    label1 = label_registry.async_create(
         "Label One",
         color="#FF000",
         icon="mdi:one",
         description="This label is label one",
     )
-    label2 = registry.async_create(
+    label2 = label_registry.async_create(
         "Label Two",
         color="#000FF",
         icon="mdi:two",
         description="This label is label two",
     )
 
-    assert len(registry.labels) == 2
+    assert len(label_registry.labels) == 2
 
     registry2 = LabelRegistry(hass)
-    await flush_store(registry._store)
+    await flush_store(label_registry._store)
     await registry2.async_load()
 
     assert len(registry2.labels) == 2
-    assert list(registry.labels) == list(registry2.labels)
+    assert list(label_registry.labels) == list(registry2.labels)
 
     label1_registry2 = registry2.async_get_or_create("Label One")
     assert label1_registry2.label_id == label1.label_id
@@ -310,42 +319,46 @@ async def test_loading_label_from_storage(
     assert len(registry.labels) == 1
 
 
-async def test_getting_label(hass: HomeAssistant) -> None:
+async def test_getting_label(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure we can get the labels by name."""
-    registry = label_registry.async_get(hass)
-    label = registry.async_get_or_create("Mock1")
-    label2 = registry.async_get_or_create("mock1")
-    label3 = registry.async_get_or_create("mock   1")
+    label = label_registry.async_get_or_create("Mock1")
+    label2 = label_registry.async_get_or_create("mock1")
+    label3 = label_registry.async_get_or_create("mock   1")
 
     assert label == label2
     assert label == label3
     assert label2 == label3
 
-    get_label = registry.async_get_label_by_name("M o c k 1")
+    get_label = label_registry.async_get_label_by_name("M o c k 1")
     assert get_label == label
 
-    get_label = registry.async_get_label(label.label_id)
+    get_label = label_registry.async_get_label(label.label_id)
     assert get_label == label
 
 
-async def test_async_get_label_by_name_not_found(hass: HomeAssistant) -> None:
+async def test_async_get_label_by_name_not_found(
+    hass: HomeAssistant, label_registry: lr.LabelRegistry
+) -> None:
     """Make sure we return None for non-existent labels."""
-    registry = label_registry.async_get(hass)
-    registry.async_create("Mock1")
+    label_registry.async_create("Mock1")
 
-    assert len(registry.labels) == 1
+    assert len(label_registry.labels) == 1
 
-    assert registry.async_get_label_by_name("non_exist") is None
+    assert label_registry.async_get_label_by_name("non_exist") is None
 
 
-async def test_labels_removed_from_devices(hass: HomeAssistant) -> None:
+async def test_labels_removed_from_devices(
+    hass: HomeAssistant,
+    device_registry: dr.DeviceRegistry,
+    label_registry: lr.LabelRegistry,
+) -> None:
     """Tests if label gets removed from devices when the label is removed."""
-    registry = label_registry.async_get(hass)
-    label1 = registry.async_create("label1")
-    label2 = registry.async_create("label2")
-    assert len(registry.labels) == 2
+    label1 = label_registry.async_create("label1")
+    label2 = label_registry.async_create("label2")
+    assert len(label_registry.labels) == 2
 
-    device_registry = dr.async_get(hass)
     entry = device_registry.async_get_or_create(
         config_entry_id="123",
         connections={(dr.CONNECTION_NETWORK_MAC, "12:34:56:AB:CD:23")},
@@ -378,14 +391,14 @@ async def test_labels_removed_from_devices(hass: HomeAssistant) -> None:
     entries = dr.async_entries_for_label(device_registry, label2.label_id)
     assert len(entries) == 2
 
-    registry.async_delete(label1.label_id)
+    label_registry.async_delete(label1.label_id)
 
     entries = dr.async_entries_for_label(device_registry, label1.label_id)
     assert len(entries) == 0
     entries = dr.async_entries_for_label(device_registry, label2.label_id)
     assert len(entries) == 2
 
-    registry.async_delete(label2.label_id)
+    label_registry.async_delete(label2.label_id)
 
     entries = dr.async_entries_for_label(device_registry, label1.label_id)
     assert len(entries) == 0
@@ -393,14 +406,16 @@ async def test_labels_removed_from_devices(hass: HomeAssistant) -> None:
     assert len(entries) == 0
 
 
-async def test_labels_removed_from_entities(hass: HomeAssistant) -> None:
+async def test_labels_removed_from_entities(
+    hass: HomeAssistant,
+    entity_registry: er.EntityRegistry,
+    label_registry: lr.LabelRegistry,
+) -> None:
     """Tests if label gets removed from entity when the label is removed."""
-    registry = label_registry.async_get(hass)
-    label1 = registry.async_create("label1")
-    label2 = registry.async_create("label2")
-    assert len(registry.labels) == 2
+    label1 = label_registry.async_create("label1")
+    label2 = label_registry.async_create("label2")
+    assert len(label_registry.labels) == 2
 
-    entity_registry = er.async_get(hass)
     entry = entity_registry.async_get_or_create(
         domain="light",
         platform="hue",
@@ -427,14 +442,14 @@ async def test_labels_removed_from_entities(hass: HomeAssistant) -> None:
     entries = er.async_entries_for_label(entity_registry, label2.label_id)
     assert len(entries) == 2
 
-    registry.async_delete(label1.label_id)
+    label_registry.async_delete(label1.label_id)
 
     entries = er.async_entries_for_label(entity_registry, label1.label_id)
     assert len(entries) == 0
     entries = er.async_entries_for_label(entity_registry, label2.label_id)
     assert len(entries) == 2
 
-    registry.async_delete(label2.label_id)
+    label_registry.async_delete(label2.label_id)
 
     entries = er.async_entries_for_label(entity_registry, label1.label_id)
     assert len(entries) == 0
