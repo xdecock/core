@@ -265,7 +265,9 @@ async def test_loading_saving_data(
     entity_registry.async_update_entity_options(
         orig_entry2.entity_id, "light", {"minimum_brightness": 20}
     )
-    entity_registry.async_update_entity(orig_entry2.entity_id, labels={"label1", "label2"})
+    entity_registry.async_update_entity(
+        orig_entry2.entity_id, labels={"label1", "label2"}
+    )
     orig_entry2 = entity_registry.async_get(orig_entry2.entity_id)
 
     assert len(entity_registry.entities) == 2
