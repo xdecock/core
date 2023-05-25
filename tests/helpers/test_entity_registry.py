@@ -1533,20 +1533,22 @@ def test_migrate_entity_to_new_platform(
         )
 
 
-async def test_removing_labels(registry: er.EntityRegistry) -> None:
+async def test_removing_labels(entity_registry: er.EntityRegistry) -> None:
     """Make sure we can clear labels."""
-    entry = registry.async_get_or_create(
+    entry = entity_registry.async_get_or_create(
         domain="light",
         platform="hue",
         unique_id="5678",
     )
-    entry = registry.async_update_entity(entry.entity_id, labels={"label1", "label2"})
+    entry = entity_registry.async_update_entity(
+        entry.entity_id, labels={"label1", "label2"}
+    )
 
-    registry.async_clear_label_id("label1")
-    entry_cleared_label1 = registry.async_get(entry.entity_id)
+    entity_registry.async_clear_label_id("label1")
+    entry_cleared_label1 = entity_registry.async_get(entry.entity_id)
 
-    registry.async_clear_label_id("label2")
-    entry_cleared_label2 = registry.async_get(entry.entity_id)
+    entity_registry.async_clear_label_id("label2")
+    entry_cleared_label2 = entity_registry.async_get(entry.entity_id)
 
     assert entry_cleared_label1
     assert entry_cleared_label2
@@ -1558,41 +1560,41 @@ async def test_removing_labels(registry: er.EntityRegistry) -> None:
     assert not entry_cleared_label2.labels
 
 
-async def test_entries_for_label(registry: er.EntityRegistry) -> None:
+async def test_entries_for_label(entity_registry: er.EntityRegistry) -> None:
     """Test getting entity entries by label."""
-    registry.async_get_or_create(
+    entity_registry.async_get_or_create(
         domain="light",
         platform="hue",
         unique_id="000",
     )
-    entry = registry.async_get_or_create(
+    entry = entity_registry.async_get_or_create(
         domain="light",
         platform="hue",
         unique_id="123",
     )
-    label_1 = registry.async_update_entity(entry.entity_id, labels={"label1"})
-    entry = registry.async_get_or_create(
+    label_1 = entity_registry.async_update_entity(entry.entity_id, labels={"label1"})
+    entry = entity_registry.async_get_or_create(
         domain="light",
         platform="hue",
         unique_id="456",
     )
-    label_2 = registry.async_update_entity(entry.entity_id, labels={"label2"})
-    entry = registry.async_get_or_create(
+    label_2 = entity_registry.async_update_entity(entry.entity_id, labels={"label2"})
+    entry = entity_registry.async_get_or_create(
         domain="light",
         platform="hue",
         unique_id="789",
     )
-    label_1_and_2 = registry.async_update_entity(
+    label_1_and_2 = entity_registry.async_update_entity(
         entry.entity_id, labels={"label1", "label2"}
     )
 
-    entries = er.async_entries_for_label(registry, "label1")
+    entries = er.async_entries_for_label(entity_registry, "label1")
     assert len(entries) == 2
     assert entries == [label_1, label_1_and_2]
 
-    entries = er.async_entries_for_label(registry, "label2")
+    entries = er.async_entries_for_label(entity_registry, "label2")
     assert len(entries) == 2
     assert entries == [label_2, label_1_and_2]
 
-    assert not er.async_entries_for_label(registry, "unknown")
-    assert not er.async_entries_for_label(registry, "")
+    assert not er.async_entries_for_label(entity_registry, "unknown")
+    assert not er.async_entries_for_label(entity_registry, "")
