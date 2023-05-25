@@ -105,6 +105,7 @@ EntityOptionsType = Mapping[str, Mapping[str, Any]]
 
 DISLAY_DICT_OPTIONAL = (
     ("ai", "area_id"),
+    ("lb", "labels"),
     ("di", "device_id"),
     ("tk", "translation_key"),
 )
@@ -257,6 +258,7 @@ class RegistryEntry:
             "platform": self.platform,
             "translation_key": self.translation_key,
             "unique_id": self.unique_id,
+            "labels": self.labels,
         }
 
     @property
