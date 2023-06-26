@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict, TypeVar, final
 
 import voluptuous as vol
 
+from homeassistant.backports.functools import cached_property
 from homeassistant.config import DATA_CUSTOMIZE
 from homeassistant.const import (
     ATTR_ASSUMED_STATE,
