@@ -1,6 +1,7 @@
 """Support for a ScreenLogic Binary Sensor."""
 from screenlogicpy.const import CODE, DATA as SL_DATA, DEVICE_TYPE, EQUIPMENT, ON_OFF
 
+from homeassistant.backports.functools import cached_property
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -92,7 +93,7 @@ class ScreenLogicBinarySensorEntity(ScreenlogicEntity, BinarySensorEntity):
         """Return the sensor name."""
         return self.sensor["name"]
 
-    @property
+    @cached_property
     def device_class(self) -> BinarySensorDeviceClass | None:
         """Return the device class."""
         device_type = self.sensor.get("device_type")

@@ -11,6 +11,7 @@ from screenlogicpy.const import (
     UNIT,
 )
 
+from homeassistant.backports.functools import cached_property
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -187,13 +188,13 @@ class ScreenLogicSensorEntity(ScreenlogicEntity, SensorEntity):
         sl_unit = self.sensor.get("unit")
         return SL_UNIT_TO_HA_UNIT.get(sl_unit, sl_unit)
 
-    @property
+    @cached_property
     def device_class(self) -> SensorDeviceClass | None:
         """Device class of the sensor."""
         device_type = self.sensor.get("device_type")
         return SL_DEVICE_TYPE_TO_HA_DEVICE_CLASS.get(device_type)
 
-    @property
+    @cached_property
     def entity_category(self) -> EntityCategory | None:
         """Entity Category of the sensor."""
         return (
