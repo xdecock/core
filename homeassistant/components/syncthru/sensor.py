@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pysyncthru import SyncThru, SyncthruState
 
+from homeassistant.backports.functools import cached_property
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, PERCENTAGE
@@ -126,7 +127,7 @@ class SyncThruMainSensor(SyncThruSensor):
             "display_text": self.syncthru.device_status_details(),
         }
 
-    @property
+    @cached_property
     def entity_registry_enabled_default(self) -> bool:
         """Disable entity by default."""
         return False
