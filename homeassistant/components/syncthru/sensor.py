@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from pysyncthru import SyncThru, SyncthruState
 
-from homeassistant.backports.functools import cached_property
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, PERCENTAGE
@@ -108,7 +107,10 @@ class SyncThruMainSensor(SyncThruSensor):
 
     It also shows the detailed state and presents
     the displayed current status message.
+
     """
+
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: DataUpdateCoordinator[SyncThru], name: str) -> None:
         """Initialize the sensor."""
@@ -126,11 +128,6 @@ class SyncThruMainSensor(SyncThruSensor):
         return {
             "display_text": self.syncthru.device_status_details(),
         }
-
-    @cached_property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity by default."""
-        return False
 
 
 class SyncThruTonerSensor(SyncThruSensor):
