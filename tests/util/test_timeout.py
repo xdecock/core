@@ -18,6 +18,16 @@ async def test_simple_global_timeout() -> None:
             await asyncio.sleep(0.3)
 
 
+async def test_global_timeout_after_context_manager_exits() -> None:
+    """Test a global timeout after context manager exit."""
+    timeout = TimeoutManager()
+
+    # The timeout will be delivered by a call_soon which
+    # will happen after the context manager exits.
+    async with timeout.async_timeout(0):
+        await asyncio.sleep(0)
+
+
 async def test_simple_global_timeout_with_executor_job(hass: HomeAssistant) -> None:
     """Test a simple global timeout with executor job."""
     timeout = TimeoutManager()
@@ -160,6 +170,16 @@ async def test_simple_zone_timeout() -> None:
     with pytest.raises(asyncio.TimeoutError):
         async with timeout.async_timeout(0.1, "test"):
             await asyncio.sleep(0.3)
+
+
+async def test_zone_timeout_after_context_manager_exit() -> None:
+    """Test a simple zone timeout after context manager exit."""
+    timeout = TimeoutManager()
+
+    # The timeout will be delivered by a call_soon which
+    # will happen after the context manager exits.
+    async with timeout.async_timeout(0):
+        await asyncio.sleep(0)
 
 
 async def test_multiple_zone_timeout() -> None:

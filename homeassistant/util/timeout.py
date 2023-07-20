@@ -219,8 +219,18 @@ class _GlobalTaskContext:
 
     def _on_timeout(self) -> None:
         """Process timeout."""
-        self._state = _State.TIMEOUT
         self._timeout_handler = None
+
+        if self._state != _State.ACTIVE:
+            # The timeout can be triggered after the task is done
+            # because the call_at gets delivered after the context
+            # manager is exited. If this happens, we need to return
+            # to so we don't cancel the task when the cancellation
+            # won't be handled since the context manager is already
+            # exited.
+            return
+
+        self._state = _State.TIMEOUT
 
         # Reset timer if zones are running
         if not self._manager.zones_done:
@@ -324,9 +334,18 @@ class _ZoneTaskContext:
 
     def _on_timeout(self) -> None:
         """Process timeout."""
-        self._state = _State.TIMEOUT
         self._timeout_handler = None
 
+        if self._state != _State.ACTIVE:
+            # The timeout can be triggered after the task is done
+            # because the call_at gets delivered after the context
+            # manager is exited. If this happens, we need to return
+            # to so we don't cancel the task when the cancellation
+            # won't be handled since the context manager is already
+            # exited.
+            return
+
+        self._state = _State.TIMEOUT
         # Timeout
         if self._task.done():
             return
