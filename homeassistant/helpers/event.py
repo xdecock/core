@@ -10,12 +10,11 @@ import functools as ft
 import logging
 from random import randint
 import time
-from typing import Any, Concatenate, ParamSpec, TypedDict, TypeVar, cast
+from typing import Any, Concatenate, ParamSpec, TypedDict, TypeVar
 
 import attr
 
 from homeassistant.const import (
-    ATTR_ENTITY_ID,
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_STATE_CHANGED,
     MATCH_ALL,
@@ -551,7 +550,7 @@ def _async_domain_added_filter(
     event: EventType[EventStateChangedData],
 ) -> bool:
     """Filter state changes by entity_id."""
-    return event.data.get("old_state") is None and (
+    return event.data["old_state"] is None and (
         MATCH_ALL in callbacks
         or split_entity_id(event.data["entity_id"])[0] in callbacks
     )
@@ -595,7 +594,7 @@ def _async_domain_removed_filter(
     event: EventType[EventStateChangedData],
 ) -> bool:
     """Filter state changes by entity_id."""
-    return event.data.get("new_state") is None and (
+    return event.data["new_state"] is None and (
         MATCH_ALL in callbacks
         or split_entity_id(event.data["entity_id"])[0] in callbacks
     )
@@ -635,7 +634,7 @@ class _TrackStateChangeFiltered:
         self,
         hass: HomeAssistant,
         track_states: TrackStates,
-        action: Callable[[Event], Any],
+        action: Callable[[EventType[EventStateChangedData]], Any],
     ) -> None:
         """Handle removal / refresh of tracker init."""
         self.hass = hass
@@ -758,7 +757,7 @@ class _TrackStateChangeFiltered:
     @callback
     def _setup_all_listener(self) -> None:
         self._listeners[_ALL_LISTENER] = self.hass.bus.async_listen(
-            EVENT_STATE_CHANGED, self._action
+            EVENT_STATE_CHANGED, self._action  # type: ignore[arg-type]
         )
 
 
@@ -767,7 +766,7 @@ class _TrackStateChangeFiltered:
 def async_track_state_change_filtered(
     hass: HomeAssistant,
     track_states: TrackStates,
-    action: Callable[[Event], Any],
+    action: Callable[[EventType[EventStateChangedData]], Any],
 ) -> _TrackStateChangeFiltered:
     """Track state changes with a TrackStates filter that can be updated.
 
@@ -841,7 +840,8 @@ def async_track_template(
 
     @callback
     def _template_changed_listener(
-        event: Event | None, updates: list[TrackTemplateResult]
+        event: EventType[EventStateChangedData] | None,
+        updates: list[TrackTemplateResult],
     ) -> None:
         """Check if condition is correct and run action."""
         track_result = updates.pop()
@@ -867,9 +867,9 @@ def async_track_template(
 
         hass.async_run_hass_job(
             job,
-            event and event.data.get("entity_id"),
-            event and event.data.get("old_state"),
-            event and event.data.get("new_state"),
+            event and event.data["entity_id"],
+            event and event.data["old_state"],
+            event and event.data["new_state"],
         )
 
     info = async_track_template_result(
@@ -889,7 +889,9 @@ class TrackTemplateResultInfo:
         self,
         hass: HomeAssistant,
         track_templates: Sequence[TrackTemplate],
-        action: Callable[[Event | None, list[TrackTemplateResult]], None],
+        action: Callable[
+            [EventType[EventStateChangedData] | None, list[TrackTemplateResult]], None
+        ],
         has_super_template: bool = False,
     ) -> None:
         """Handle removal / refresh of tracker init."""
@@ -1026,7 +1028,7 @@ class TrackTemplateResultInfo:
         self,
         track_template_: TrackTemplate,
         now: datetime,
-        event: Event | None,
+        event: EventType[EventStateChangedData] | None,
     ) -> bool | TrackTemplateResult:
         """Re-render the template if conditions match.
 
@@ -1097,7 +1099,7 @@ class TrackTemplateResultInfo:
     @callback
     def _refresh(
         self,
-        event: Event | None,
+        event: EventType[EventStateChangedData] | None,
         track_templates: Iterable[TrackTemplate] | None = None,
         replayed: bool | None = False,
     ) -> None:
@@ -1205,7 +1207,7 @@ class TrackTemplateResultInfo:
 
 TrackTemplateResultListener = Callable[
     [
-        Event | None,
+        EventType[EventStateChangedData] | None,
         list[TrackTemplateResult],
     ],
     None,
@@ -1315,11 +1317,11 @@ def async_track_same_state(
         hass.async_run_hass_job(job)
 
     @callback
-    def state_for_cancel_listener(event: Event) -> None:
+    def state_for_cancel_listener(event: EventType[EventStateChangedData]) -> None:
         """Fire on changes and cancel for listener if changed."""
-        entity: str = event.data["entity_id"]
-        from_state: State | None = event.data.get("old_state")
-        to_state: State | None = event.data.get("new_state")
+        entity = event.data["entity_id"]
+        from_state = event.data["old_state"]
+        to_state = event.data["new_state"]
 
         if not async_check_same_func(entity, from_state, to_state):
             clear_listener()
@@ -1330,7 +1332,7 @@ def async_track_same_state(
 
     if entity_ids == MATCH_ALL:
         async_remove_state_for_cancel = hass.bus.async_listen(
-            EVENT_STATE_CHANGED, state_for_cancel_listener
+            EVENT_STATE_CHANGED, state_for_cancel_listener  # type: ignore[arg-type]
         )
     else:
         async_remove_state_for_cancel = async_track_state_change_event(
@@ -1761,17 +1763,16 @@ def _render_infos_to_track_states(render_infos: Iterable[RenderInfo]) -> TrackSt
 
 
 @callback
-def _event_triggers_rerender(event: Event, info: RenderInfo) -> bool:
+def _event_triggers_rerender(
+    event: EventType[EventStateChangedData], info: RenderInfo
+) -> bool:
     """Determine if a template should be re-rendered from an event."""
-    entity_id = cast(str, event.data.get(ATTR_ENTITY_ID))
+    entity_id = event.data["entity_id"]
 
     if info.filter(entity_id):
         return True
 
-    if (
-        event.data.get("new_state") is not None
-        and event.data.get("old_state") is not None
-    ):
+    if event.data["new_state"] is not None and event.data["old_state"] is not None:
         return False
 
     return bool(info.filter_lifecycle(entity_id))
@@ -1779,12 +1780,14 @@ def _event_triggers_rerender(event: Event, info: RenderInfo) -> bool:
 
 @callback
 def _rate_limit_for_event(
-    event: Event, info: RenderInfo, track_template_: TrackTemplate
+    event: EventType[EventStateChangedData],
+    info: RenderInfo,
+    track_template_: TrackTemplate,
 ) -> timedelta | None:
     """Determine the rate limit for an event."""
     # Specifically referenced entities are excluded
     # from the rate limit
-    if event.data.get(ATTR_ENTITY_ID) in info.entities:
+    if event.data["entity_id"] in info.entities:
         return None
 
     if track_template_.rate_limit is not None:
