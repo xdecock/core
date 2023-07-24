@@ -562,9 +562,8 @@ class ProtectDeviceBinarySensor(ProtectDeviceEntity, BinarySensorEntity):
         self._attr_is_on = entity_description.get_ufp_value(updated_device)
         # UP Sense can be any of the 3 contact sensor device classes
         if entity_description.key == _KEY_DOOR and isinstance(updated_device, Sensor):
-            self._device_class: BinarySensorDeviceClass | None = (
-                MOUNT_DEVICE_CLASS_MAP.get(
-                    self.device.mount_type, BinarySensorDeviceClass.DOOR
+            self._device_class = MOUNT_DEVICE_CLASS_MAP.get(
+                self.device.mount_type, BinarySensorDeviceClass.DOOR
             )
         else:
             self._device_class = self.entity_description.device_class
