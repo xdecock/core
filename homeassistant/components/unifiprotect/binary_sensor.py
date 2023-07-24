@@ -552,18 +552,19 @@ class ProtectDeviceBinarySensor(ProtectDeviceEntity, BinarySensorEntity):
 
     device: Camera | Light | Sensor
     entity_description: ProtectBinaryEntityDescription
+    _device_class: BinarySensorDeviceClass | None
 
     @callback
     def _async_update_device_from_protect(self, device: ProtectModelWithId) -> None:
         super()._async_update_device_from_protect(device)
-
-        self._attr_is_on = self.entity_description.get_ufp_value(self.device)
+        entity_description = self.entity_description
+        updated_device = self.device
+        self._attr_is_on = entity_description.get_ufp_value(updated_device)
         # UP Sense can be any of the 3 contact sensor device classes
-        if self.entity_description.key == _KEY_DOOR and isinstance(self.device, Sensor):
+        if entity_description.key == _KEY_DOOR and isinstance(updated_device, Sensor):
             self._device_class: BinarySensorDeviceClass | None = (
                 MOUNT_DEVICE_CLASS_MAP.get(
                     self.device.mount_type, BinarySensorDeviceClass.DOOR
-                )
             )
         else:
             self._device_class = self.entity_description.device_class
@@ -625,7 +626,7 @@ class ProtectEventBinarySensor(EventEntityMixin, BinarySensorEntity):
     @callback
     def _async_update_device_from_protect(self, device: ProtectModelWithId) -> None:
         super()._async_update_device_from_protect(device)
-        is_on = self.entity_description.get_is_on(device)
+        is_on = self.entity_description.get_is_on(self._event)
         self._attr_is_on: bool | None = is_on
         if not is_on:
             self._event = None
