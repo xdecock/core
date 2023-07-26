@@ -83,5 +83,17 @@
         "holiday": "Holidays"
       }
     }
+  },
+  "services": {
+    "check_date": {
+      "name": "Check date",
+      "description": "Check if date is workday.",
+      "fields": {
+        "check_date": {
+          "name": "Date",
+          "description": "Date to check if workday."
+        }
+      }
+    }
   }
 }
