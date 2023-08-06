@@ -225,6 +225,26 @@ class EsphomeEntity(Entity, Generic[_InfoT, _StateT]):
         """
         static_info = cast(_InfoT, static_info)
         self._static_info = static_info
+
+        lower_mac = (
+            dr.format_mac(self._entry_data.device_info.mac_address)
+            .replace(":", "")
+            .lower()
+        )
+        import pprint
+
+        if static_info.unique_id.startswith(f"{lower_mac}-"):
+            pprint.pprint(["static_info", static_info.unique_id, static_info])
+        else:
+            entity_info_type = type(static_info).__name__.lower()[:-4]
+            entry_id = self._entry_data.entry_id
+            pprint.pprint(
+                [
+                    "static_info",
+                    f"{entry_id}-{entity_info_type}-{static_info.object_id}",
+                    static_info,
+                ]
+            )
         self._attr_unique_id = static_info.unique_id
         self._attr_entity_registry_enabled_default = not static_info.disabled_by_default
         self._attr_name = static_info.name
