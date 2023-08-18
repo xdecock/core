@@ -78,8 +78,6 @@ class WakeWordDetectionEntity(RestoreEntity):
     @final
     def state(self) -> str | None:
         """Return the state of the entity."""
-        if self.__last_processed is None:
-            return None
         return self.__last_processed
 
     @property
