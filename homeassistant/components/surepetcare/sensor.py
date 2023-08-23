@@ -5,11 +5,12 @@ from typing import cast
 
 from surepy.entities import SurepyEntity
 from surepy.entities.devices import Felaqua as SurepyFelaqua
+from surepy.entities.devices import Feeder as SurepyFeeder
 from surepy.enums import EntityType
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_VOLTAGE, PERCENTAGE, EntityCategory, UnitOfVolume
+from homeassistant.const import ATTR_VOLTAGE, PERCENTAGE, EntityCategory, UnitOfVolume, UnitOfMass
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -38,6 +39,9 @@ async def async_setup_entry(
 
         if surepy_entity.type == EntityType.FELAQUA:
             entities.append(Felaqua(surepy_entity.id, coordinator))
+
+        if surepy_entity.type == EntityType.FEEDER:
+            entities.append(SureFeeder(surepy_entity.id, coordinator))
 
     async_add_entities(entities)
 
@@ -105,3 +109,28 @@ class Felaqua(SurePetcareEntity, SensorEntity):
         """Update the state."""
         surepy_entity = cast(SurepyFelaqua, surepy_entity)
         self._attr_native_value = surepy_entity.water_remaining
+
+class SureFeeder(SurePetcareEntity, SensorEntity):
+    """Sure Petcare Feeder"""
+
+    _attr_device_class = SensorDeviceClass.WEIGHT
+    _attr_native_unit_of_measurement = UnitOfMass.GRAMS
+
+    def __init__(
+        self, surepetcare_id: int, coordinator: SurePetcareDataCoordinator
+    ) -> None:
+        """Initialize a Sure Petcare Felaqua sensor."""
+        super().__init__(surepetcare_id, coordinator)
+
+        surepy_entity = cast(SurepyFeeder, coordinator.data[surepetcare_id])
+
+        self._attr_name = self._device_name
+        self._attr_unique_id = self._device_id
+        self._attr_entity_picture = surepy_entity.icon
+
+    @callback
+    def _update_attr(self, surepy_entity: SurepyEntity) -> None:
+        """Update the state."""
+        surepy_entity = cast(SurepyFeeder, surepy_entity)
+        self._attr_native_value = surepy_entity.total_weight
+        
